@@ -11,7 +11,7 @@
       "source_file": "mainloop_200000.vtk",
       "dataset_dir": "frames/mainloop_200000",
       "metadata_file": "frames/mainloop_200000/metadata.json",
-      "input_count": 500000,
+      "input_count": 5820866,
       "original_count": 5820866,
       "color_by": "speed",
       "scalar_name": "|v|",
@@ -20,14 +20,14 @@
       "scalar_max": 0.5,
       "categories": [],
       "bounds_min": [
-        0.00026199696003459394,
-        -0.12973791360855103,
-        -0.07973780483007431
+        0.00017094110080506653,
+        -0.1297379583120346,
+        -0.0797378420829773
       ],
       "bounds_max": [
-        0.07973777502775192,
-        -0.05790913477540016,
-        0.0797378420829773
+        0.0797378346323967,
+        -0.056203339248895645,
+        0.07973786443471909
       ]
     },
     {
@@ -36,7 +36,7 @@
       "source_file": "mainloop_400000.vtk",
       "dataset_dir": "frames/mainloop_400000",
       "metadata_file": "frames/mainloop_400000/metadata.json",
-      "input_count": 500000,
+      "input_count": 5820780,
       "original_count": 5820780,
       "color_by": "speed",
       "scalar_name": "|v|",
@@ -45,15 +45,24 @@
       "scalar_max": 0.5,
       "categories": [],
       "bounds_min": [
-        1.9294757294119336e-05,
+        6.5364652073185425e-06,
         -0.12973806262016296,
-        -0.07973776012659073
+        -0.07973785698413849
       ],
       "bounds_max": [
         0.0797378420829773,
-        -0.003699905937537551,
-        0.07973781228065491
+        -0.0004012759600300342,
+        0.07973787188529968
       ]
     }
-  ]
+  ],
+  "focus": {
+    "center": [
+      0.0,
+      -0.07000000029802322,
+      0.0
+    ],
+    "radius": 0.008,
+    "view_radius": 0.0128
+  }
 }

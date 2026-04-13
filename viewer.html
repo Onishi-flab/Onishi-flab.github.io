@@ -357,6 +357,58 @@
       return 2.2 * state.pointScale;
     }
 
+    function focusBoundsFromMeta(datasetMeta) {
+      if (!datasetMeta.focus) {
+        return null;
+      }
+      const center = datasetMeta.focus.center;
+      const radius = Math.max(datasetMeta.focus.view_radius ?? datasetMeta.focus.radius, 1.0e-6);
+      return {
+        min: [center[0] - radius, center[1] - radius, center[2] - radius],
+        max: [center[0] + radius, center[1] + radius, center[2] + radius],
+      };
+    }
+
+    function boxDistanceSqToPoint(point, boundsMin, boundsMax) {
+      let distanceSq = 0.0;
+      for (let axis = 0; axis < 3; axis += 1) {
+        let delta = 0.0;
+        if (point[axis] < boundsMin[axis]) {
+          delta = boundsMin[axis] - point[axis];
+        } else if (point[axis] > boundsMax[axis]) {
+          delta = point[axis] - boundsMax[axis];
+        }
+        distanceSq += delta * delta;
+      }
+      return distanceSq;
+    }
+
+    function nodeIntersectsFocus(nodeMeta) {
+      if (!state.datasetMeta || !state.datasetMeta.focus) {
+        return false;
+      }
+      const focus = state.datasetMeta.focus;
+      return (
+        boxDistanceSqToPoint(focus.center, nodeMeta.bounds_min, nodeMeta.bounds_max) <=
+        focus.radius * focus.radius
+      );
+    }
+
+    function childFocusSortValue(nodeName) {
+      const nodeMeta = state.datasetMeta.nodes[nodeName];
+      if (!state.datasetMeta || !state.datasetMeta.focus) {
+        return [1, nodeMeta.depth, 0.0];
+      }
+      const focus = state.datasetMeta.focus;
+      const intersectsFocus = nodeIntersectsFocus(nodeMeta) ? 0 : 1;
+      const distanceSq = boxDistanceSqToPoint(
+        focus.center,
+        nodeMeta.bounds_min,
+        nodeMeta.bounds_max,
+      );
+      return [intersectsFocus, nodeMeta.depth, distanceSq];
+    }
+
     function nodeStateFromName(name) {
       let nodeState = state.nodes.get(name);
       if (!nodeState) {
@@ -407,7 +459,11 @@
         renderer.domElement.clientHeight /
         (2.0 * Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5)) * distance);
       const screenRadius = nodeMeta.radius * pixelsPerUnit;
-      return screenRadius > state.lodThreshold;
+      let splitThreshold = state.lodThreshold;
+      if (nodeIntersectsFocus(nodeMeta) && state.datasetMeta.focus) {
+        splitThreshold *= state.datasetMeta.focus.threshold_scale ?? 0.6;
+      }
+      return screenRadius > splitThreshold;
     }
 
     async function ensureNodeLoaded(nodeName) {
@@ -496,7 +552,20 @@
           return;
         }
 
-        for (const childName of nodeMeta.children) {
+        const childNames = [...nodeMeta.children];
+        childNames.sort((leftName, rightName) => {
+          const left = childFocusSortValue(leftName);
+          const right = childFocusSortValue(rightName);
+          if (left[0] !== right[0]) {
+            return left[0] - right[0];
+          }
+          if (left[1] !== right[1]) {
+            return left[1] - right[1];
+          }
+          return left[2] - right[2];
+        });
+
+        for (const childName of childNames) {
           visitNode(childName);
         }
       }
@@ -549,7 +618,13 @@
       state.datasetMeta = await response.json();
       state.datasetBaseDir = frame.dataset_dir;
 
-      fitCamera(state.datasetMeta.bounds_min, state.datasetMeta.bounds_max);
+      const focusBounds = focusBoundsFromMeta(state.datasetMeta);
+      if (focusBounds) {
+        // [FaSTAR-DEM] 初期表示はクレーター近傍へ寄せて、見たい場所から入りやすくするよ。
+        fitCamera(focusBounds.min, focusBounds.max);
+      } else {
+        fitCamera(state.datasetMeta.bounds_min, state.datasetMeta.bounds_max);
+      }
       updateMeta(frame, state.datasetMeta);
       sharedMaterial.size = currentPointSize();
       state.updateNeeded = true;
