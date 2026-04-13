@@ -49,11 +49,27 @@
       box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
     }
 
+    #panel.collapsed {
+      width: auto;
+      padding: 12px 14px;
+    }
+
     h1 {
       margin: 0 0 10px;
       font-size: 18px;
       line-height: 1.3;
       letter-spacing: 0.02em;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .panel-title {
+      min-width: 0;
     }
 
     .credit {
@@ -62,6 +78,27 @@
       font-size: 13px;
       line-height: 1.4;
       letter-spacing: 0.04em;
+    }
+
+    .panel-toggle {
+      width: auto;
+      min-width: 72px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+
+    .panel-body {
+      margin-top: 8px;
+    }
+
+    #panel.collapsed .panel-body {
+      display: none;
+    }
+
+    #panel.collapsed .credit {
+      margin-bottom: 0;
     }
 
     p {
@@ -144,6 +181,14 @@
         top: 10px;
         left: 10px;
         width: calc(100vw - 20px);
+        max-height: calc(100vh - 20px);
+        overflow: auto;
+      }
+
+      #panel.collapsed {
+        width: auto;
+        max-width: calc(100vw - 20px);
+        overflow: visible;
       }
     }
   </style>
@@ -151,31 +196,37 @@
 <body>
   <div id="app"></div>
   <section id="panel">
-    <h1>Octree Viewer</h1>
-    <div class="credit">Ryutaro Onishi / Oyama Lab.</div>
-
-    <div class="row">
-      <label for="frameSelect">フレーム</label>
-      <select id="frameSelect"></select>
+    <div class="panel-header">
+      <div class="panel-title">
+        <h1>Octree Viewer</h1>
+        <div class="credit">Ryutaro Onishi / Oyama Lab.</div>
+      </div>
+      <button id="panelToggle" class="panel-toggle" type="button" aria-expanded="true">畳む</button>
     </div>
+    <div id="panelBody" class="panel-body">
+      <div class="row">
+        <label for="frameSelect">フレーム</label>
+        <select id="frameSelect"></select>
+      </div>
 
-    <div class="row">
-      <label for="sizeRange">粒の見た目サイズ <span id="sizeValue"></span></label>
-      <input id="sizeRange" type="range" min="0.5" max="3.0" step="0.05" value="1.0">
+      <div class="row">
+        <label for="sizeRange">粒の見た目サイズ <span id="sizeValue"></span></label>
+        <input id="sizeRange" type="range" min="0.5" max="3.0" step="0.05" value="1.0">
+      </div>
+
+      <div class="row">
+        <label for="lodRange">細かさ <span id="lodValue"></span></label>
+        <input id="lodRange" type="range" min="30" max="240" step="5" value="90">
+      </div>
+
+      <div class="inline">
+        <button id="fitButton" type="button">全体に合わせる</button>
+        <button id="bgButton" type="button">背景を切り替え</button>
+      </div>
+
+      <div id="meta" class="meta"></div>
+      <div id="status" class="status"></div>
     </div>
-
-    <div class="row">
-      <label for="lodRange">細かさ <span id="lodValue"></span></label>
-      <input id="lodRange" type="range" min="30" max="240" step="5" value="90">
-    </div>
-
-    <div class="inline">
-      <button id="fitButton" type="button">全体に合わせる</button>
-      <button id="bgButton" type="button">背景を切り替え</button>
-    </div>
-
-    <div id="meta" class="meta"></div>
-    <div id="status" class="status"></div>
   </section>
 
   <script type="importmap">
@@ -192,6 +243,8 @@
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
     const app = document.getElementById('app');
+    const panel = document.getElementById('panel');
+    const panelToggle = document.getElementById('panelToggle');
     const frameSelect = document.getElementById('frameSelect');
     const sizeRange = document.getElementById('sizeRange');
     const sizeValue = document.getElementById('sizeValue');
@@ -243,6 +296,7 @@
       lastVisibleNames: new Set(),
       updateNeeded: true,
       updateInFlight: false,
+      panelCollapsed: window.innerWidth <= 640,
     };
 
     function setStatus(text) {
@@ -263,6 +317,12 @@
 
     function updateLodLabel() {
       lodValue.textContent = `${Number(lodRange.value)} px`;
+    }
+
+    function syncPanelCollapsed() {
+      panel.classList.toggle('collapsed', state.panelCollapsed);
+      panelToggle.textContent = state.panelCollapsed ? '開く' : '畳む';
+      panelToggle.setAttribute('aria-expanded', String(!state.panelCollapsed));
     }
 
     function clearNodes() {
@@ -531,6 +591,10 @@
     });
 
     bgButton.addEventListener('click', toggleBackground);
+    panelToggle.addEventListener('click', () => {
+      state.panelCollapsed = !state.panelCollapsed;
+      syncPanelCollapsed();
+    });
     controls.addEventListener('change', () => {
       state.updateNeeded = true;
     });
@@ -544,6 +608,7 @@
 
     updatePointSizeLabel();
     updateLodLabel();
+    syncPanelCollapsed();
 
     function animate() {
       requestAnimationFrame(animate);

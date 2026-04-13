@@ -11,7 +11,7 @@
       "source_file": "mainloop_200000.vtk",
       "dataset_dir": "frames/mainloop_200000",
       "metadata_file": "frames/mainloop_200000/metadata.json",
-      "input_count": 300000,
+      "input_count": 100000,
       "original_count": 5820866,
       "color_by": "speed",
       "scalar_name": "|v|",
@@ -20,14 +20,14 @@
       "scalar_max": 0.5,
       "categories": [],
       "bounds_min": [
-        0.00026220461586490273,
-        -0.12973788380622864,
-        -0.07973780483007431
+        0.0002620921586640179,
+        -0.12973782420158386,
+        -0.07973772287368774
       ],
       "bounds_max": [
-        0.07973776757717133,
-        -0.06110762059688568,
-        0.0797378420829773
+        0.07973773777484894,
+        -0.06340783834457397,
+        0.07973775267601013
       ]
     },
     {
@@ -36,7 +36,7 @@
       "source_file": "mainloop_400000.vtk",
       "dataset_dir": "frames/mainloop_400000",
       "metadata_file": "frames/mainloop_400000/metadata.json",
-      "input_count": 300000,
+      "input_count": 100000,
       "original_count": 5820780,
       "color_by": "speed",
       "scalar_name": "|v|",
@@ -45,14 +45,14 @@
       "scalar_max": 0.5,
       "categories": [],
       "bounds_min": [
-        0.00026210048235952854,
-        -0.1297379583120346,
-        -0.0797378197312355
+        0.00026215967955067754,
+        -0.12973788380622864,
+        -0.07973775267601013
       ],
       "bounds_max": [
         0.07973777502775192,
-        -0.0008318450418300927,
-        0.07973776757717133
+        -0.005706286523491144,
+        0.07973781228065491
       ]
     }
   ]
