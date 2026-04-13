@@ -11,7 +11,7 @@
       "source_file": "mainloop_0.vtk",
       "dataset_dir": "frames/mainloop_0",
       "metadata_file": "frames/mainloop_0/metadata.json",
-      "input_count": 5820868,
+      "input_count": 300000,
       "original_count": 5820868,
       "color_by": "speed",
       "scalar_name": "|v|",
@@ -21,13 +21,13 @@
       "categories": [],
       "bounds_min": [
         0.00026218098355457187,
-        -0.12973789870738983,
-        -0.0797378271818161
+        -0.12973785400390625,
+        -0.07973772287368774
       ],
       "bounds_max": [
-        0.0797378197312355,
-        -0.07000002264976501,
-        0.07973784953355789
+        0.07973779737949371,
+        -0.07000041753053665,
+        0.07973778247833252
       ]
     },
     {
@@ -36,7 +36,7 @@
       "source_file": "mainloop_200000.vtk",
       "dataset_dir": "frames/mainloop_200000",
       "metadata_file": "frames/mainloop_200000/metadata.json",
-      "input_count": 5820866,
+      "input_count": 300000,
       "original_count": 5820866,
       "color_by": "speed",
       "scalar_name": "|v|",
@@ -45,13 +45,13 @@
       "scalar_max": 0.5,
       "categories": [],
       "bounds_min": [
-        0.00017094110080506653,
-        -0.1297379583120346,
+        0.00026199696003459394,
+        -0.12973783910274506,
         -0.0797378420829773
       ],
       "bounds_max": [
-        0.0797378346323967,
-        -0.056203339248895645,
+        0.07973779737949371,
+        -0.058792129158973694,
         0.07973786443471909
       ]
     },
@@ -61,7 +61,7 @@
       "source_file": "mainloop_400000.vtk",
       "dataset_dir": "frames/mainloop_400000",
       "metadata_file": "frames/mainloop_400000/metadata.json",
-      "input_count": 5820780,
+      "input_count": 300000,
       "original_count": 5820780,
       "color_by": "speed",
       "scalar_name": "|v|",
@@ -70,14 +70,14 @@
       "scalar_max": 0.5,
       "categories": [],
       "bounds_min": [
-        6.5364652073185425e-06,
-        -0.12973806262016296,
-        -0.07973785698413849
+        0.00012511445675045252,
+        -0.12973804771900177,
+        -0.07973775267601013
       ],
       "bounds_max": [
-        0.0797378420829773,
-        -0.0004012759600300342,
-        0.07973787188529968
+        0.07973776012659073,
+        -0.007258845027536154,
+        0.07973778247833252
       ]
     }
   ]
