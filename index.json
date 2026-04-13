@@ -3,15 +3,40 @@
   "input_dir": "/olaba/onishi/02_FaSTAR-DEM_v2.0/05_post/vtk_to_xyzrgb",
   "pattern": "mainloop_*.vtk",
   "color_by": "speed",
-  "frame_count": 2,
+  "frame_count": 3,
   "frames": [
+    {
+      "label": "mainloop_0",
+      "step": 0,
+      "source_file": "mainloop_0.vtk",
+      "dataset_dir": "frames/mainloop_0",
+      "metadata_file": "frames/mainloop_0/metadata.json",
+      "input_count": 5820868,
+      "original_count": 5820868,
+      "color_by": "speed",
+      "scalar_name": "|v|",
+      "scalar_kind": "continuous",
+      "scalar_min": 0.0,
+      "scalar_max": 0.5,
+      "categories": [],
+      "bounds_min": [
+        0.00026218098355457187,
+        -0.12973789870738983,
+        -0.0797378271818161
+      ],
+      "bounds_max": [
+        0.0797378197312355,
+        -0.07000002264976501,
+        0.07973784953355789
+      ]
+    },
     {
       "label": "mainloop_200000",
       "step": 200000,
       "source_file": "mainloop_200000.vtk",
       "dataset_dir": "frames/mainloop_200000",
       "metadata_file": "frames/mainloop_200000/metadata.json",
-      "input_count": 100000,
+      "input_count": 5820866,
       "original_count": 5820866,
       "color_by": "speed",
       "scalar_name": "|v|",
@@ -20,14 +45,14 @@
       "scalar_max": 0.5,
       "categories": [],
       "bounds_min": [
-        0.0002620921586640179,
-        -0.12973782420158386,
-        -0.07973772287368774
+        0.00017094110080506653,
+        -0.1297379583120346,
+        -0.0797378420829773
       ],
       "bounds_max": [
-        0.07973773777484894,
-        -0.06340783834457397,
-        0.07973775267601013
+        0.0797378346323967,
+        -0.056203339248895645,
+        0.07973786443471909
       ]
     },
     {
@@ -36,7 +61,7 @@
       "source_file": "mainloop_400000.vtk",
       "dataset_dir": "frames/mainloop_400000",
       "metadata_file": "frames/mainloop_400000/metadata.json",
-      "input_count": 100000,
+      "input_count": 5820780,
       "original_count": 5820780,
       "color_by": "speed",
       "scalar_name": "|v|",
@@ -45,14 +70,14 @@
       "scalar_max": 0.5,
       "categories": [],
       "bounds_min": [
-        0.00026215967955067754,
-        -0.12973788380622864,
-        -0.07973775267601013
+        6.5364652073185425e-06,
+        -0.12973806262016296,
+        -0.07973785698413849
       ],
       "bounds_max": [
-        0.07973777502775192,
-        -0.005706286523491144,
-        0.07973781228065491
+        0.0797378420829773,
+        -0.0004012759600300342,
+        0.07973787188529968
       ]
     }
   ]

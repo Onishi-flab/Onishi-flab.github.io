@@ -80,6 +80,13 @@
       letter-spacing: 0.04em;
     }
 
+    .note {
+      margin: -2px 0 0;
+      color: rgba(237, 246, 249, 0.78);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
     .panel-toggle {
       width: auto;
       min-width: 72px;
@@ -99,6 +106,10 @@
 
     #panel.collapsed .credit {
       margin-bottom: 0;
+    }
+
+    #panel.collapsed .note {
+      display: none;
     }
 
     p {
@@ -200,6 +211,7 @@
       <div class="panel-title">
         <h1>Octree Viewer</h1>
         <div class="credit">Ryutaro Onishi / Oyama Lab.</div>
+        <div class="note">(注) 粒子は間引いて表示しています．</div>
       </div>
       <button id="panelToggle" class="panel-toggle" type="button" aria-expanded="true">畳む</button>
     </div>
@@ -317,6 +329,11 @@
 
     function updateLodLabel() {
       lodValue.textContent = `${Number(lodRange.value)} px`;
+    }
+
+    function formatStepSeconds(stepValue) {
+      const seconds = stepValue / 2000000.0;
+      return `${seconds.toFixed(6).replace(/\.?0+$/, '')} s`;
     }
 
     function syncPanelCollapsed() {
@@ -551,7 +568,7 @@
       state.index.frames.forEach((frame, index) => {
         const option = document.createElement('option');
         option.value = String(index);
-        option.textContent = frame.step === null ? frame.label : `${frame.label} (step ${frame.step})`;
+        option.textContent = frame.step === null ? frame.label : `${frame.label} (${formatStepSeconds(frame.step)})`;
         frameSelect.appendChild(option);
       });
 
