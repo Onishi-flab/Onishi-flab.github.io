@@ -1,0 +1,567 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FaSTAR-DEM Octree Viewer</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #091018;
+      --panel: rgba(9, 16, 24, 0.9);
+      --line: rgba(255, 255, 255, 0.12);
+      --text: #edf6f9;
+      --sub: #a8dadc;
+      --accent: #ffb703;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at top left, rgba(255, 183, 3, 0.18), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(42, 157, 143, 0.24), transparent 30%),
+        var(--bg);
+      color: var(--text);
+      font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+    }
+
+    #app {
+      position: fixed;
+      inset: 0;
+    }
+
+    #panel {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      z-index: 10;
+      width: min(380px, calc(100vw - 32px));
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--panel);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 18px;
+      line-height: 1.3;
+      letter-spacing: 0.02em;
+    }
+
+    p {
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    .row {
+      display: grid;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .inline {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    label,
+    button,
+    select,
+    input {
+      font: inherit;
+    }
+
+    select,
+    input[type="range"],
+    button {
+      width: 100%;
+    }
+
+    select,
+    button {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      padding: 8px 10px;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    button:hover {
+      border-color: rgba(255, 183, 3, 0.42);
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 10px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(255, 183, 3, 0.12);
+      color: var(--accent);
+      font-size: 12px;
+    }
+
+    .meta {
+      margin-top: 12px;
+      color: var(--sub);
+      font-size: 13px;
+      white-space: pre-line;
+    }
+
+    .status {
+      margin-top: 8px;
+      color: var(--accent);
+      font-size: 13px;
+      white-space: pre-line;
+    }
+
+    @media (max-width: 640px) {
+      #panel {
+        top: 10px;
+        left: 10px;
+        width: calc(100vw - 20px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <section id="panel">
+    <h1>FaSTAR-DEM Octree Viewer</h1>
+    <p>同じフォルダの <code>index.json</code> と、各フレームの階層ノードを読んで軽めに回すよ。</p>
+    <div class="chip">[FaSTAR-DEM] GitHub Pages でもそのまま配信できるように、必要なノードだけ順番に読む方式にしてあるよ</div>
+
+    <div class="row">
+      <label for="frameSelect">フレーム</label>
+      <select id="frameSelect"></select>
+    </div>
+
+    <div class="row">
+      <label for="sizeRange">粒の見た目サイズ <span id="sizeValue"></span></label>
+      <input id="sizeRange" type="range" min="0.5" max="3.0" step="0.05" value="1.0">
+    </div>
+
+    <div class="row">
+      <label for="lodRange">細かさ <span id="lodValue"></span></label>
+      <input id="lodRange" type="range" min="30" max="240" step="5" value="90">
+    </div>
+
+    <div class="inline">
+      <button id="fitButton" type="button">全体に合わせる</button>
+      <button id="bgButton" type="button">背景を切り替え</button>
+    </div>
+
+    <div id="meta" class="meta"></div>
+    <div id="status" class="status"></div>
+  </section>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.164.1/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.164.1/examples/jsm/"
+      }
+    }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    const app = document.getElementById('app');
+    const frameSelect = document.getElementById('frameSelect');
+    const sizeRange = document.getElementById('sizeRange');
+    const sizeValue = document.getElementById('sizeValue');
+    const lodRange = document.getElementById('lodRange');
+    const lodValue = document.getElementById('lodValue');
+    const fitButton = document.getElementById('fitButton');
+    const bgButton = document.getElementById('bgButton');
+    const meta = document.getElementById('meta');
+    const status = document.getElementById('status');
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    app.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color('#091018');
+
+    const camera = new THREE.PerspectiveCamera(
+      50,
+      window.innerWidth / window.innerHeight,
+      1.0e-5,
+      1.0e5,
+    );
+    camera.position.set(0.3, 0.3, 0.3);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.target.set(0.0, 0.0, 0.0);
+
+    const ambient = new THREE.AmbientLight(0xffffff, 1.0);
+    scene.add(ambient);
+
+    const sharedMaterial = new THREE.PointsMaterial({
+      size: 2.5,
+      sizeAttenuation: false,
+      vertexColors: true,
+    });
+
+    const state = {
+      index: null,
+      datasetMeta: null,
+      datasetBaseDir: '',
+      currentFrame: null,
+      nodes: new Map(),
+      pointScale: 1.0,
+      lodThreshold: Number(lodRange.value),
+      darkBackground: true,
+      lastVisibleNames: new Set(),
+      updateNeeded: true,
+      updateInFlight: false,
+    };
+
+    function setStatus(text) {
+      status.textContent = text;
+    }
+
+    function formatNumber(value) {
+      return new Intl.NumberFormat('ja-JP').format(value);
+    }
+
+    function formatRange(minValue, maxValue) {
+      return `${minValue.toExponential(3)} .. ${maxValue.toExponential(3)}`;
+    }
+
+    function updatePointSizeLabel() {
+      sizeValue.textContent = `x${Number(sizeRange.value).toFixed(2)}`;
+    }
+
+    function updateLodLabel() {
+      lodValue.textContent = `${Number(lodRange.value)} px`;
+    }
+
+    function clearNodes() {
+      for (const nodeState of state.nodes.values()) {
+        if (nodeState.object) {
+          scene.remove(nodeState.object);
+          nodeState.object.geometry.dispose();
+        }
+      }
+      state.nodes.clear();
+      state.lastVisibleNames = new Set();
+    }
+
+    function currentPointSize() {
+      return 2.2 * state.pointScale;
+    }
+
+    function nodeStateFromName(name) {
+      let nodeState = state.nodes.get(name);
+      if (!nodeState) {
+        nodeState = {
+          meta: state.datasetMeta.nodes[name],
+          object: null,
+          loadingPromise: null,
+          loaded: false,
+        };
+        state.nodes.set(name, nodeState);
+      }
+      return nodeState;
+    }
+
+    function fitCamera(boundsMin, boundsMax) {
+      const box = new THREE.Box3(
+        new THREE.Vector3(...boundsMin),
+        new THREE.Vector3(...boundsMax),
+      );
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z, 1.0e-6);
+      const distance = maxDim / Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5));
+
+      controls.target.copy(center);
+      camera.position.copy(center.clone().add(new THREE.Vector3(distance, distance * 0.65, distance)));
+      camera.near = Math.max(maxDim * 1.0e-4, 1.0e-6);
+      camera.far = Math.max(distance * 20.0, maxDim * 20.0, 1.0);
+      camera.updateProjectionMatrix();
+      controls.update();
+    }
+
+    function nodeIntersectsFrustum(nodeMeta, frustum) {
+      const box = new THREE.Box3(
+        new THREE.Vector3(...nodeMeta.bounds_min),
+        new THREE.Vector3(...nodeMeta.bounds_max),
+      );
+      return frustum.intersectsBox(box);
+    }
+
+    function nodeShouldSplit(nodeMeta) {
+      if (!nodeMeta.children || nodeMeta.children.length === 0) {
+        return false;
+      }
+      const center = new THREE.Vector3(...nodeMeta.center);
+      const distance = Math.max(camera.position.distanceTo(center), 1.0e-6);
+      const pixelsPerUnit =
+        renderer.domElement.clientHeight /
+        (2.0 * Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5)) * distance);
+      const screenRadius = nodeMeta.radius * pixelsPerUnit;
+      return screenRadius > state.lodThreshold;
+    }
+
+    async function ensureNodeLoaded(nodeName) {
+      const nodeState = nodeStateFromName(nodeName);
+      if (nodeState.loaded) {
+        return nodeState;
+      }
+      if (nodeState.loadingPromise) {
+        return nodeState.loadingPromise;
+      }
+
+      const nodeUrl = `${state.datasetBaseDir}/${nodeState.meta.file}`;
+      nodeState.loadingPromise = fetch(nodeUrl)
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`ノード読み込み失敗: ${nodeUrl}`);
+          }
+          return response.arrayBuffer();
+        })
+        .then((buffer) => {
+          const count = nodeState.meta.count;
+          const positionsQ = new Uint16Array(buffer, 0, count * 3);
+          const colors = new Uint8Array(buffer, count * 3 * 2, count * 3);
+          const positions = new Float32Array(count * 3);
+          const boundsMin = nodeState.meta.bounds_min;
+          const boundsMax = nodeState.meta.bounds_max;
+          const spanX = boundsMax[0] - boundsMin[0];
+          const spanY = boundsMax[1] - boundsMin[1];
+          const spanZ = boundsMax[2] - boundsMin[2];
+
+          // [FaSTAR-DEM] ノードごとの局所座標を 16bit で持ってるから、
+          // ここで実座標へ戻して GPU に渡すよ。
+          for (let i = 0; i < count; i += 1) {
+            const j = i * 3;
+            positions[j + 0] = boundsMin[0] + (positionsQ[j + 0] / 65535.0) * spanX;
+            positions[j + 1] = boundsMin[1] + (positionsQ[j + 1] / 65535.0) * spanY;
+            positions[j + 2] = boundsMin[2] + (positionsQ[j + 2] / 65535.0) * spanZ;
+          }
+
+          const geometry = new THREE.BufferGeometry();
+          geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+          geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3, true));
+
+          const points = new THREE.Points(geometry, sharedMaterial);
+          points.visible = state.lastVisibleNames.has(nodeState.meta.name);
+          scene.add(points);
+
+          nodeState.object = points;
+          nodeState.loaded = true;
+          nodeState.loadingPromise = null;
+          state.updateNeeded = true;
+          return nodeState;
+        })
+        .catch((error) => {
+          nodeState.loadingPromise = null;
+          throw error;
+        });
+
+      return nodeState.loadingPromise;
+    }
+
+    async function updateVisibleNodes() {
+      if (!state.datasetMeta) {
+        return;
+      }
+
+      const projectionMatrix = new THREE.Matrix4()
+        .multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+      const frustum = new THREE.Frustum().setFromProjectionMatrix(projectionMatrix);
+      const nextVisibleNames = new Set();
+      let visiblePointCount = 0;
+
+      function visitNode(nodeName) {
+        const nodeMeta = state.datasetMeta.nodes[nodeName];
+        if (!nodeIntersectsFrustum(nodeMeta, frustum)) {
+          return;
+        }
+
+        nextVisibleNames.add(nodeName);
+        visiblePointCount += nodeMeta.count;
+        ensureNodeLoaded(nodeName).catch((error) => {
+          setStatus(`エラー: ${error.message}`);
+        });
+
+        if (!nodeShouldSplit(nodeMeta)) {
+          return;
+        }
+
+        for (const childName of nodeMeta.children) {
+          visitNode(childName);
+        }
+      }
+
+      visitNode(state.datasetMeta.root);
+
+      for (const [nodeName, nodeState] of state.nodes.entries()) {
+        if (nodeState.object) {
+          nodeState.object.visible = nextVisibleNames.has(nodeName);
+        }
+      }
+
+      state.lastVisibleNames = nextVisibleNames;
+      setStatus(
+        `表示中ノード: ${formatNumber(nextVisibleNames.size)}\n` +
+        `表示予定点数: ${formatNumber(visiblePointCount)}`
+      );
+    }
+
+    function updateMeta(frame, datasetMeta) {
+      const boundsText =
+        `x: ${datasetMeta.bounds_min[0].toExponential(3)} .. ${datasetMeta.bounds_max[0].toExponential(3)}\n` +
+        `y: ${datasetMeta.bounds_min[1].toExponential(3)} .. ${datasetMeta.bounds_max[1].toExponential(3)}\n` +
+        `z: ${datasetMeta.bounds_min[2].toExponential(3)} .. ${datasetMeta.bounds_max[2].toExponential(3)}`;
+
+      const categoryText =
+        datasetMeta.scalar_kind === 'categorical'
+          ? `\nカテゴリ: ${datasetMeta.categories.join(', ')}`
+          : '';
+
+      meta.textContent =
+        `入力点数: ${formatNumber(frame.input_count)} / ${formatNumber(frame.original_count)}\n` +
+        `色: ${datasetMeta.scalar_name} (${formatRange(datasetMeta.scalar_min, datasetMeta.scalar_max)})${categoryText}\n` +
+        `octree 深さ: ${datasetMeta.max_depth}\n` +
+        `範囲:\n${boundsText}`;
+    }
+
+    async function loadDataset(frameIndex) {
+      const frame = state.index.frames[frameIndex];
+      setStatus(`読み込み中... ${frame.label}`);
+
+      clearNodes();
+
+      const response = await fetch(frame.metadata_file);
+      if (!response.ok) {
+        throw new Error(`metadata.json が見つからないよ: ${frame.metadata_file}`);
+      }
+
+      state.currentFrame = frame;
+      state.datasetMeta = await response.json();
+      state.datasetBaseDir = frame.dataset_dir;
+
+      fitCamera(state.datasetMeta.bounds_min, state.datasetMeta.bounds_max);
+      updateMeta(frame, state.datasetMeta);
+      sharedMaterial.size = currentPointSize();
+      state.updateNeeded = true;
+      await updateVisibleNodes();
+      setStatus(`読み込み完了: ${frame.label}`);
+    }
+
+    async function loadIndex() {
+      setStatus('index.json を読み込み中...');
+      const response = await fetch('./index.json');
+      if (!response.ok) {
+        throw new Error('index.json が見つからないよ。');
+      }
+      state.index = await response.json();
+
+      state.index.frames.forEach((frame, index) => {
+        const option = document.createElement('option');
+        option.value = String(index);
+        option.textContent = frame.step === null ? frame.label : `${frame.label} (step ${frame.step})`;
+        frameSelect.appendChild(option);
+      });
+
+      if (state.index.frames.length === 0) {
+        throw new Error('index.json にフレームが入ってないよ。');
+      }
+
+      await loadDataset(0);
+    }
+
+    function toggleBackground() {
+      state.darkBackground = !state.darkBackground;
+      scene.background = new THREE.Color(state.darkBackground ? '#091018' : '#f1faee');
+    }
+
+    frameSelect.addEventListener('change', async () => {
+      await loadDataset(Number(frameSelect.value));
+    });
+
+    sizeRange.addEventListener('input', () => {
+      state.pointScale = Number(sizeRange.value);
+      updatePointSizeLabel();
+      sharedMaterial.size = currentPointSize();
+    });
+
+    lodRange.addEventListener('input', () => {
+      state.lodThreshold = Number(lodRange.value);
+      updateLodLabel();
+      state.updateNeeded = true;
+    });
+
+    fitButton.addEventListener('click', () => {
+      if (state.datasetMeta) {
+        fitCamera(state.datasetMeta.bounds_min, state.datasetMeta.bounds_max);
+        state.updateNeeded = true;
+      }
+    });
+
+    bgButton.addEventListener('click', toggleBackground);
+    controls.addEventListener('change', () => {
+      state.updateNeeded = true;
+    });
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      state.updateNeeded = true;
+    });
+
+    updatePointSizeLabel();
+    updateLodLabel();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      if (state.updateNeeded && !state.updateInFlight) {
+        state.updateNeeded = false;
+        state.updateInFlight = true;
+        updateVisibleNodes()
+          .catch((error) => {
+            console.error(error);
+            setStatus(`エラー: ${error.message}`);
+          })
+          .finally(() => {
+            state.updateInFlight = false;
+          });
+      }
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    loadIndex().catch((error) => {
+      console.error(error);
+      setStatus(`エラー: ${error.message}`);
+    });
+  </script>
+</body>
+</html>

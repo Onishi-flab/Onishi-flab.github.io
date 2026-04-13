@@ -1,0 +1,34 @@
+{
+  "generator": "convert_vtk_to_octree_web.py",
+  "input_dir": "/olaba/onishi/02_FaSTAR-DEM_v2.0/05_post/vtk_to_xyzrgb",
+  "pattern": "mainloop_*.vtk",
+  "color_by": "speed",
+  "frame_count": 1,
+  "frames": [
+    {
+      "label": "mainloop_200000",
+      "step": 200000,
+      "source_file": "mainloop_200000.vtk",
+      "dataset_dir": "frames/mainloop_200000",
+      "metadata_file": "frames/mainloop_200000/metadata.json",
+      "input_count": 300000,
+      "original_count": 5820866,
+      "color_by": "speed",
+      "scalar_name": "|v|",
+      "scalar_kind": "continuous",
+      "scalar_min": 6.875491287416935e-09,
+      "scalar_max": 0.6470506191253662,
+      "categories": [],
+      "bounds_min": [
+        0.00026220461586490273,
+        -0.12973788380622864,
+        -0.07973780483007431
+      ],
+      "bounds_max": [
+        0.07973776757717133,
+        -0.06110762059688568,
+        0.0797378420829773
+      ]
+    }
+  ]
+}
