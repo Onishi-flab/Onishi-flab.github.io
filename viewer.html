@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>FaSTAR-DEM Octree Viewer</title>
+  <title>Octree Viewer</title>
   <style>
     :root {
       color-scheme: dark;
@@ -54,6 +54,14 @@
       font-size: 18px;
       line-height: 1.3;
       letter-spacing: 0.02em;
+    }
+
+    .credit {
+      margin: -4px 0 10px;
+      color: var(--sub);
+      font-size: 13px;
+      line-height: 1.4;
+      letter-spacing: 0.04em;
     }
 
     p {
@@ -143,9 +151,8 @@
 <body>
   <div id="app"></div>
   <section id="panel">
-    <h1>FaSTAR-DEM Octree Viewer</h1>
-    <p>同じフォルダの <code>index.json</code> と、各フレームの階層ノードを読んで軽めに回すよ。</p>
-    <div class="chip">[FaSTAR-DEM] GitHub Pages でもそのまま配信できるように、必要なノードだけ順番に読む方式にしてあるよ</div>
+    <h1>Octree Viewer</h1>
+    <div class="credit">Ryutaro Onishi / Oyama Lab.</div>
 
     <div class="row">
       <label for="frameSelect">フレーム</label>
